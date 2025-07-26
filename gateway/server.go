@@ -23,20 +23,15 @@ func main() {
 
 	// Routes
 	// SMS
-	e.POST("/sms/normal", sendNormalSMS)
-	e.POST("/sms/express", sendExpressSMS)
+	e.POST("/sms", sendSMS)
 	// REPORTING
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
 }
 
-func sendNormalSMS(c echo.Context) error {
+func sendSMS(c echo.Context) error {
 	return processSMS(c, "normal")
-}
-
-func sendExpressSMS(c echo.Context) error {
-	return processSMS(c, "express")
 }
 
 func processSMS(c echo.Context, smsType string) error {
