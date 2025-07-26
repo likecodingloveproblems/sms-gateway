@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package accounting;
+option go_package = "grpc-accounting/pb;pb";
+
+service Accounting {
+  rpc ReserveDebit(ReserveDebitRequest) returns (ReserveDebitResponse);
+  rpc CancelDebit(CancelDebitRequest) returns (CancelDebitResponse);
+}
+
+message ReserveDebitRequest {
+  uint64  user_id = 1;
+  uint64 amount = 2;
+  bytes reference_id = 3;
+}
+
+message ReserveDebitResponse {
+  bool is_successful = 1;
+  string reason = 2;   // optional: "user_not_found", "insufficient_balance", or error message
+}
+
+message CancelDebitRequest{
+  uint64 user_id = 1;
+  uint64 amount = 2;
+  bytes reference_id = 3;
+}
+
+message CancelDebitResponse {
+  bool is_successful = 1;
+  string reason = 2;   // optional: "user_not_found", or error message
+}
