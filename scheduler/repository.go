@@ -2,6 +2,9 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
+	"github.com/likecodingloveproblems/sms-gateway/entity"
+	"github.com/likecodingloveproblems/sms-gateway/gateway"
 	"github.com/likecodingloveproblems/sms-gateway/pkg/sliding_window"
 	"github.com/likecodingloveproblems/sms-gateway/types"
 	"github.com/redis/go-redis/v9"
@@ -16,6 +19,20 @@ type RedisRepository struct {
 	slidingWindow sliding_window.SlidingWindow
 	groupName     string // This must be given to the process by orchestrator
 	consumerName  string // This is generated and try to be random and time stamp to create a unique one or given by orchestrator
+}
+
+func GetStreamKey(message entity.Message) string {
+	switch message.Type {
+	case entity.ExpressMessage:
+		return ExpressStreamKey
+	default:
+		// other cases are normal
+		return fmt.Sprintf(gateway.NormalStreamKeyTemplate, message.UserID)
+	}
+}
+
+func (r *RedisRepository) Ack(ctx context.Context, message entity.Message) error {
+	return r.rdb.XAck(ctx, GetStreamKey(message), r.groupName, fmt.Sprintf("%d", message.ID)).Err()
 }
 
 func NewRepository(rdb *redis.Client) Repository {
@@ -38,7 +55,7 @@ func (r *RedisRepository) AvgExpressMessageProcessingDuration() (time.Duration, 
 	return time.Duration(avg), nil
 }
 
-func (r *RedisRepository) AddSuccessfulMessageToTimeWindow(message Message) error {
+func (r *RedisRepository) AddSuccessfulMessageToTimeWindow(message entity.Message) error {
 	return r.slidingWindow.Add(float64(time.Now().Second() - message.CreatedAt.Second()))
 }
 
@@ -47,8 +64,8 @@ func (r *RedisRepository) Keys(ctx context.Context, pattern string) ([]string, e
 	return r.rdb.Keys(ctx, pattern).Result()
 }
 
-func (r *RedisRepository) ReadStreams(ctx context.Context, streamsKey []string) ([]Message, error) {
-	var messages []Message
+func (r *RedisRepository) ReadStreams(ctx context.Context, streamsKey []string) ([]entity.Message, error) {
+	var messages []entity.Message
 	streamsArgs := make([]string, 0, len(streamsKey)*2)
 	for _, s := range streamsKey {
 		streamsArgs = append(streamsArgs, s)
@@ -78,7 +95,7 @@ func (r *RedisRepository) ReadStreams(ctx context.Context, streamsKey []string) 
 	return messages, nil
 }
 
-func (*RedisRepository) mapRedisMessageToMessage(message redis.XMessage) Message {
+func (*RedisRepository) mapRedisMessageToMessage(message redis.XMessage) entity.Message {
 	var createdAt time.Time
 	if createdAtVal, ok := message.Values["created_at"]; ok {
 		if createdAtStr, ok := createdAtVal.(string); ok {
@@ -114,7 +131,7 @@ func (*RedisRepository) mapRedisMessageToMessage(message redis.XMessage) Message
 		status = s
 	}
 
-	return Message{
+	return entity.Message{
 		ID:        types.ID(numericID),
 		Text:      text,
 		CreatedAt: createdAt,

@@ -6,9 +6,11 @@ var (
 	ErrValidationFailed     = errors.New("input validation failed")
 	ErrUnexpectedError      = errors.New("unexpected error occurred")
 	ErrInvalidRequestFormat = errors.New("invalid request format")
-	ErrGetUserInfo          = errors.New("get user info failed")
 	ErrFailedDecodeBase64   = errors.New("decode data to base 64 failed")
 	ErrFailedUnmarshalJson  = errors.New("unmarshal data to JSON failed")
+	ErrNotEnoughBudget      = errors.New("not enough budget")
+	ErrUnknownMessageType   = errors.New("unknown message type")
+	ErrUserNotFound         = errors.New("user_not_found")
 )
 
 // Define constant messages generally

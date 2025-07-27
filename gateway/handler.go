@@ -1,40 +1,48 @@
 package gateway
 
 import (
+	"errors"
+	errmsg "github.com/likecodingloveproblems/sms-gateway/pkg/err_msg"
 	"net/http"
-	
+
 	"github.com/labstack/echo/v4"
 )
 
-type SMSRequest struct {
-	Phone   string `json:"phone" validate:"required"`
-	Message string `json:"message" validate:"required,min=1,max=160"`
-}
+type ValidateSendMessage func(request SendMessageRequest) error
 
-func SendSMS(c echo.Context) error {
-	return processSMS(c, "normal")
-}
+func SendSMS(service Service, validator ValidateSendMessage) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var req SendMessageRequest
+		if err := c.Bind(&req); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Invalid request format",
+			})
+		}
 
-func processSMS(c echo.Context, smsType string) error {
-	var req SMSRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid request format",
+		if err := validator(req); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
+		}
+
+		message := mapToMessage(req)
+		err := service.ProcessMessage(c.Request().Context(), message)
+		if errors.Is(err, errmsg.ErrNotEnoughBudget) {
+			return c.JSON(http.StatusPaymentRequired, map[string]string{
+				"error": err.Error(),
+			})
+		}
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+		}
+
+		return c.JSON(http.StatusAccepted, map[string]interface{}{
+			"recipient": req.Recipient,
+			"text":      message.Text,
+			"status":    "queued",
+			"type":      message.Type,
 		})
 	}
-
-	if err := c.Validate(req); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, map[string]string{
-			"error": err.Error(),
-		})
-	}
-
-	// TODO: Add actual SMS sending logic with queueing
-	return c.JSON(http.StatusAccepted, map[string]interface{}{
-		"status":  "queued",
-		"type":    smsType,
-		"phone":   req.Phone,
-		"message": req.Message,
-		"warning": "SMS not actually sent - demo mode",
-	})
 }

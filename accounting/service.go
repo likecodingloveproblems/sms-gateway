@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/likecodingloveproblems/sms-gateway/pkg/cron_job"
+	errmsg "github.com/likecodingloveproblems/sms-gateway/pkg/err_msg"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"strconv"
@@ -149,7 +150,7 @@ func (c *CachedPostgresStorage) withdraw(ctx context.Context, userId uint64, amo
 	if err != nil {
 		if err.Error() == "not_found" {
 			// As we check this condition, it must not be reached any time
-			return false, ErrUserNotFound
+			return false, errmsg.ErrUserNotFound
 		}
 		return false, err
 	}
@@ -169,7 +170,7 @@ func (c *CachedPostgresStorage) cacheBalanceFromDB(ctx context.Context, userId u
 	// Fetch value from postgres table and cache balance of user in redis
 	balance, err := c.fetchBalanceFromDB(ctx, userId)
 	if errors.Is(err, sql.ErrNoRows) {
-		return ErrUserNotFound
+		return errmsg.ErrUserNotFound
 	}
 	if err != nil {
 		return err
@@ -206,7 +207,7 @@ func (c *CachedPostgresStorage) cacheBalanceFromDBIfNecessary(ctx context.Contex
 	if !exists {
 		err := c.cacheBalanceFromDB(ctx, userId)
 		if err != nil {
-			return ErrInternalServer
+			return errmsg.ErrUnexpectedError
 		}
 	}
 	return nil

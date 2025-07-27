@@ -1,19 +1,21 @@
 package scheduler
 
 import (
+	"context"
 	"errors"
+	"github.com/likecodingloveproblems/sms-gateway/entity"
 	"log"
 	"math/rand"
 	"time"
 )
 
 type Provider interface {
-	Send(message Message) error
+	Send(ctx context.Context, message entity.Message) error
 }
 
 type LogProvider struct{}
 
-func (l LogProvider) Send(message Message) error {
+func (l LogProvider) Send(ctx context.Context, message entity.Message) error {
 	log.Printf("sent message: %v\n", message)
 	return nil
 }
@@ -25,7 +27,7 @@ type RandomlyFailProviderWithDelay struct {
 	MaxDelay    time.Duration
 }
 
-func (r RandomlyFailProviderWithDelay) Send(message Message) error {
+func (r RandomlyFailProviderWithDelay) Send(ctx context.Context, message entity.Message) error {
 	delay := time.Duration(rand.Intn(int(r.MaxDelay.Milliseconds())))
 	time.Sleep(delay)
 	if rand.Intn(100)+1 < r.FailurePerc {

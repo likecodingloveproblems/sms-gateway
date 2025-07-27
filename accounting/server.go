@@ -3,7 +3,7 @@ package accounting
 import (
 	"context"
 	"database/sql"
-	"github.com/likecodingloveproblems/sms-gateway/accounting/pb/grpc-accounting/pb"
+	reservedebit "github.com/likecodingloveproblems/sms-gateway/protobuf/accounting/golang/ReserveDebit"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"log"
@@ -11,15 +11,14 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedAccountingServer
+	reservedebit.UnimplementedAccountingServer
 	storage Storage
 }
 
-func (s *server) ReserveDebit(ctx context.Context, req *pb.ReserveDebitRequest) (*pb.ReserveDebitResponse, error) {
-	accountingService := NewCachedDB(ctx, db)
+func (s *server) ReserveDebit(ctx context.Context, req *reservedebit.ReserveDebitRequest) (*reservedebit.ReserveDebitResponse, error) {
 }
 
-func (s *server) CancelDebit(ctx context.Context, req *pb.CancelDebitRequest) (*pb.CancelDebitResponse, error) {
+func (s *server) CancelDebit(ctx context.Context, req *reservedebit.CancelDebitRequest) (*reservedebit.CancelDebitResponse, error) {
 
 }
 
@@ -49,7 +48,7 @@ func Serve() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterAccountingServer(s, gRPCServer)
+	reservedebit.RegisterAccountingServer(s, gRPCServer)
 	log.Println("Accounting gRPC server running at :50051")
 	err = s.Serve(lis)
 	if err != nil {

@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"github.com/likecodingloveproblems/sms-gateway/entity"
 	"log"
 	"math/rand"
 	"time"
@@ -10,15 +11,16 @@ import (
 type Repository interface {
 	GetExpressMessagesCount(context.Context) (int64, error)
 	AvgExpressMessageProcessingDuration() (time.Duration, error)
-	AddSuccessfulMessageToTimeWindow(message Message) error
+	AddSuccessfulMessageToTimeWindow(message entity.Message) error
 	Keys(ctx context.Context, pattern string) ([]string, error)
-	ReadStreams(ctx context.Context, keys []string) ([]Message, error)
+	ReadStreams(ctx context.Context, keys []string) ([]entity.Message, error)
+	Ack(ctx context.Context, message entity.Message) error
 }
 
 type Scheduler interface {
 	Run(ctx context.Context) // entry point
-	OnSuccess(ctx context.Context, message Message)
-	OnFailure(ctx context.Context, message Message)
+	OnSuccess(ctx context.Context, message entity.Message)
+	OnFailure(ctx context.Context, message entity.Message)
 }
 
 type Task interface {
@@ -39,7 +41,7 @@ type ProbabilisticProportionalScheduler struct {
 	provider                               Provider
 }
 
-func (p *ProbabilisticProportionalScheduler) OnSuccess(ctx context.Context, message Message) {
+func (s *ProbabilisticProportionalScheduler) OnSuccess(ctx context.Context, message entity.Message) {
 	// Now you must ACK
 	// it seems that removing message from streams is not responsiblity of service
 	// as it's possible to replace redis.streams with kafka.topics
@@ -48,18 +50,26 @@ func (p *ProbabilisticProportionalScheduler) OnSuccess(ctx context.Context, mess
 	// And we must raise and event to be used with other services like reporting and accounting
 }
 
-func (p *ProbabilisticProportionalScheduler) OnFailure(ctx context.Context, message Message) {
+func (s *ProbabilisticProportionalScheduler) OnFailure(ctx context.Context, message entity.Message) {
 	// Retry first
 	// Then ACK the message and send the message to dead letter queue
-	// Then Emit failure event
+	// Then add failure event
+	err := s.repository.Ack(ctx, message)
+	if err != nil {
+		// It's very bad things someone must come and review the process
+		log.Printf("Error in Ack: %s", err.Error())
+	}
+
+	// Now send the new status of the message to be processed by reporting
+	s.repository.Add(ctx, message)
 }
 
-func (p *ProbabilisticProportionalScheduler) Run(ctx context.Context) {
+func (s *ProbabilisticProportionalScheduler) Run(ctx context.Context) {
 	// It's blocking!
 	// Schedule to listen on what kind of message
 	var streamsKey []string
 	var err error
-	defer p.worker.Stop()
+	defer s.worker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -67,34 +77,34 @@ func (p *ProbabilisticProportionalScheduler) Run(ctx context.Context) {
 		default:
 		}
 
-		switch p.schedule() {
-		case NormalCategory:
-			streamsKey, err = p.getNormalStreamsKeyToConsume(ctx)
+		switch s.schedule() {
+		case entity.NormalMessage:
+			streamsKey, err = s.getNormalStreamsKeyToConsume(ctx)
 			if err != nil {
 				log.Printf("Error in getStreamsToConsume: %s\n", err.Error())
 				continue
 			}
-		case ExpressCategory:
+		case entity.ExpressMessage:
 			streamsKey = []string{ExpressStreamKey}
 		}
-		messages, err := p.repository.ReadStreams(ctx, streamsKey)
+		messages, err := s.repository.ReadStreams(ctx, streamsKey)
 		if err != nil {
 			log.Printf("Error in ReadStream: %s\n", err.Error())
 			continue
 		}
-		p.sendToProvider(ctx, messages)
+		s.sendToProvider(ctx, messages)
 	}
 }
 
-func (p *ProbabilisticProportionalScheduler) schedule() Category {
+func (s *ProbabilisticProportionalScheduler) schedule() entity.MessageType {
 	// Now we want to implement a probabilistic proportional sharing algorithm
 	// that calculate processing time of all express messages
 	// then try to optimize processing time to be 70% expected express processing time that is SLA
 	expressPortion := 50
-	if p.estimateExpressMessageDeliveryDuration == 0 {
-		return NormalCategory
+	if s.estimateExpressMessageDeliveryDuration == 0 {
+		return entity.NormalMessage
 	}
-	expressSLARate := p.estimateExpressMessageDeliveryDuration.Seconds() / SLAExpressMessageDeliveryDuration.Seconds()
+	expressSLARate := s.estimateExpressMessageDeliveryDuration.Seconds() / SLAExpressMessageDeliveryDuration.Seconds()
 	if expressSLARate > 0.9 {
 		// Status of express is critical
 		// keep 5% for normal to prevent starvation
@@ -117,54 +127,61 @@ func (p *ProbabilisticProportionalScheduler) schedule() Category {
 	}
 
 	if rand.Intn(100) <= expressPortion {
-		return ExpressCategory
+		return entity.ExpressMessage
 	}
-	return NormalCategory
+	return entity.NormalMessage
 }
 
-func (p *ProbabilisticProportionalScheduler) updateState(ctx context.Context) {
+func (s *ProbabilisticProportionalScheduler) updateState(ctx context.Context) {
 	// update stream info from redis periodic
 	ticker := time.NewTicker(ProbabilisticSchedulerInterval)
 	for {
 		<-ticker.C
 		log.Println("Going to update probabilistic info from redis!")
-		expressMessagesCount, err := p.repository.GetExpressMessagesCount(ctx)
+		expressMessagesCount, err := s.repository.GetExpressMessagesCount(ctx)
 		if err != nil {
 			log.Printf("Error in XLen express stream: %s\n", err.Error())
 			// keep things smooth
-			p.estimateExpressMessageDeliveryDuration = time.Duration(SLAExpressMessageDeliveryDuration.Seconds() * 0.7)
+			s.estimateExpressMessageDeliveryDuration = time.Duration(SLAExpressMessageDeliveryDuration.Seconds() * 0.7)
 			return
 		}
-		avgExpressMessageProcessingDuration, err := p.repository.AvgExpressMessageProcessingDuration()
+		avgExpressMessageProcessingDuration, err := s.repository.AvgExpressMessageProcessingDuration()
 		if err != nil {
 			log.Printf("Error in AvgExpressMessagesProcessingDuration: %s\n", err.Error())
 			// keep things smooth
-			p.estimateExpressMessageDeliveryDuration = time.Duration(SLAExpressMessageDeliveryDuration.Seconds() * 0.7)
+			s.estimateExpressMessageDeliveryDuration = time.Duration(SLAExpressMessageDeliveryDuration.Seconds() * 0.7)
 			return
 		}
-		p.estimateExpressMessageDeliveryDuration = time.Duration(expressMessagesCount) * avgExpressMessageProcessingDuration
+		s.estimateExpressMessageDeliveryDuration = time.Duration(expressMessagesCount) * avgExpressMessageProcessingDuration
 	}
 }
 
-func (p *ProbabilisticProportionalScheduler) getNormalStreamsKeyToConsume(ctx context.Context) ([]string, error) {
+func (s *ProbabilisticProportionalScheduler) getNormalStreamsKeyToConsume(ctx context.Context) ([]string, error) {
 	// It can be part of the broker, to load balance between partitions of normal sms
 
 	// What about a time that number of streams is huge
 	// In the problem specification is said we will have only 100,000 customers that is not a huge number
 	// but if the number of customers go up by order we can implement a load balancer here for streams
 	// like round-robin
-	keys, err := p.repository.Keys(ctx, "sms:normal:*")
+	keys, err := s.repository.Keys(ctx, "sms:normal:*")
 	if err != nil {
 		return []string{}, err
 	}
 	return keys, nil
 }
 
-func (p *ProbabilisticProportionalScheduler) sendToProvider(ctx context.Context, messages []Message) {
+func (s *ProbabilisticProportionalScheduler) sendToProvider(ctx context.Context, messages []entity.Message) {
 	// It must send to provider with onSuccess and onFailure callbacks
 	// All of this will be submitted to a worker to keep the backpressure on control
 	// a worker is used with limited amount of concurrency
-
+	for _, message := range messages {
+		// It's better to have a retry policy hear on failure
+		if err := s.provider.Send(ctx, message); err != nil {
+			s.OnFailure(ctx, message)
+		} else {
+			s.OnSuccess(ctx, message)
+		}
+	}
 }
 
 func NewScheduler(repository Repository, worker Worker, provider Provider) Scheduler {
