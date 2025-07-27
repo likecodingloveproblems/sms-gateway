@@ -1,0 +1,18 @@
+{
+	"nodes":[
+		{"id":"dc60041a1a7c0374","type":"text","text":"user","x":-125,"y":-30,"width":125,"height":50},
+		{"id":"3d02bd248680eeb1","type":"text","text":"API Gateway","x":135,"y":-34,"width":165,"height":60},
+		{"id":"07ab50e7bb021bfe","type":"text","text":"Consumers to send to providers","x":423,"y":-36,"width":317,"height":60},
+		{"id":"b0b1bd127c0e3d73","type":"text","text":"InfluxDB","x":867,"y":-36,"width":250,"height":60},
+		{"id":"9335ae09900926ce","type":"text","text":"Time series database\n\nTimescaledb\nInfluxDB\nClickhouse\nPrometheus\nElastic search","x":867,"y":39,"width":250,"height":221},
+		{"id":"2a82368bb725a593","type":"text","text":"Budget management\n\nCache: write through\n","x":59,"y":50,"width":317,"height":100},
+		{"id":"6de84eab3471ea5d","type":"text","text":"How to guarantee Atomicity here?\n\n- Sending message successfully\n- Store in time series database","x":413,"y":-200,"width":327,"height":145},
+		{"id":"9d37b7cca5ad1eef","x":423,"y":150,"width":250,"height":60,"type":"text","text":"Saga pattern"}
+	],
+	"edges":[
+		{"id":"4d66dddbb4b170fa","fromNode":"dc60041a1a7c0374","fromSide":"right","toNode":"3d02bd248680eeb1","toSide":"left"},
+		{"id":"3db1afb427450e02","fromNode":"3d02bd248680eeb1","fromSide":"right","toNode":"07ab50e7bb021bfe","toSide":"left"},
+		{"id":"58020bebd46a6ffc","fromNode":"07ab50e7bb021bfe","fromSide":"right","toNode":"b0b1bd127c0e3d73","toSide":"left"},
+		{"id":"be2ce2d0c76ad7b8","fromNode":"07ab50e7bb021bfe","fromSide":"right","toNode":"2a82368bb725a593","toSide":"bottom","label":"Cash back on failure"}
+	]
+}

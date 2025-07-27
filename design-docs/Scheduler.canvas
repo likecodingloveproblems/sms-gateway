@@ -1,0 +1,17 @@
+{
+	"nodes":[
+		{"id":"73edd2baae172392","type":"text","text":"API Gateway","x":-520,"y":-25,"width":161,"height":50},
+		{"id":"234c827d86122d55","type":"text","text":"Probabilistic Proportional Sharing\nSchedule to consume:\nExpress\nNormal\n","x":60,"y":-78,"width":380,"height":157},
+		{"id":"91e3055d2937fcf0","x":476,"y":-254,"width":250,"height":60,"type":"text","text":"Express"},
+		{"id":"70310fee993c8442","x":476,"y":120,"width":224,"height":300,"type":"text","text":"Normal\n\n1- Obtain streams to be consumed(Now for the sake of simplicity all of them are fetched)\n2- Consume N messages from obtained streams"},
+		{"id":"8efe7046ad6ae01a","x":900,"y":-80,"width":399,"height":135,"type":"text","text":"Submit to Worker Pool:\nit must be a Blocking Limited Size Pool.\n\nTask must send the message to operator:\nOnSuccess: emit an event to update reporting\nOnFailure: emit an event to update reporting and cash back message price"}
+	],
+	"edges":[
+		{"id":"3e7bafc29bea39e4","fromNode":"73edd2baae172392","fromSide":"right","toNode":"234c827d86122d55","toSide":"left","label":"Express and Normal streams"},
+		{"id":"f9bd080ee0252700","fromNode":"73edd2baae172392","fromSide":"right","toNode":"234c827d86122d55","toSide":"left"},
+		{"id":"3460521b40ac2312","fromNode":"234c827d86122d55","fromSide":"top","toNode":"91e3055d2937fcf0","toSide":"left"},
+		{"id":"43cd59cdd26cc622","fromNode":"234c827d86122d55","fromSide":"bottom","toNode":"70310fee993c8442","toSide":"left"},
+		{"id":"3115782bac9ba783","fromNode":"91e3055d2937fcf0","fromSide":"right","toNode":"8efe7046ad6ae01a","toSide":"left"},
+		{"id":"def3aaf09f54af95","fromNode":"70310fee993c8442","fromSide":"right","toNode":"8efe7046ad6ae01a","toSide":"left"}
+	]
+}

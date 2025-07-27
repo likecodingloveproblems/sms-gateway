@@ -1,0 +1,26 @@
+{
+	"nodes":[
+		{"id":"e2d469b0f18f208e","type":"text","text":"API gateway - REST","x":-520,"y":-140,"width":250,"height":60},
+		{"id":"e37ca9d2904c95ad","type":"text","text":"Scheduler","x":-45,"y":-138,"width":250,"height":60},
+		{"id":"6f099ae35935b390","type":"text","text":"Normal Service","x":314,"y":-220,"width":250,"height":60},
+		{"id":"244798bf5aefe369","type":"text","text":"Express service","x":322,"y":-63,"width":250,"height":60},
+		{"id":"d40966a9ae5ed977","type":"text","text":"Failure","x":92,"y":74,"width":250,"height":60},
+		{"id":"73175164615fca84","type":"text","text":"Accounting Service\nWrite through cache","x":-440,"y":134,"width":250,"height":66},
+		{"id":"69453bf7fb46a1fb","type":"text","text":"Operator - Provider of SMS","x":711,"y":-137,"width":250,"height":60},
+		{"id":"3ad0375346f6648a","type":"text","text":"is this a simple router or a scheduler?\nPolicy of Each\n","x":-88,"y":-275,"width":305,"height":120},
+		{"id":"a5d33731e7a0bd02","type":"text","text":"Cache accounting in the API the sync it with accounting service with a cron job.\nEach time the user request for the update on the balance, first the API Gateway request from the Redis and if it does not exists request from database and store the updated value in the Redis with TTL","x":-532,"y":200,"width":435,"height":230},
+		{"id":"aecf809d46df10bb","type":"text","text":"SLA\nDynamic Resource Allocation\nConsumer","x":500,"y":-33,"width":300,"height":137},
+		{"id":"d5fc1916c89e5f71","type":"text","text":"reporting part:\nIt's possible to store the data in a cache until the status of the message is finalized, then storing the data in the datastore.\nThere are two options:\n1. Columnar databases:\n\t1. Clickhouse: it's optimized for write and give builtin functionality to create reports in so many formats\n2. NoSQL databases:\n\t1. Like MongoDB that are more write friendly\n\n**ClickHouse** seems suitable, but I must read about it to defend my design.","x":1020,"y":-199,"width":580,"height":303}
+	],
+	"edges":[
+		{"id":"a4e5f9df1f7c95a2","fromNode":"e2d469b0f18f208e","fromSide":"right","toNode":"e37ca9d2904c95ad","toSide":"left","label":"Queue"},
+		{"id":"11de497a525ee818","fromNode":"e37ca9d2904c95ad","fromSide":"right","toNode":"6f099ae35935b390","toSide":"left"},
+		{"id":"6025560dfa6b309f","fromNode":"e37ca9d2904c95ad","fromSide":"right","toNode":"244798bf5aefe369","toSide":"left"},
+		{"id":"733b44991e487b37","fromNode":"d40966a9ae5ed977","fromSide":"left","toNode":"73175164615fca84","toSide":"right"},
+		{"id":"42ae9f611115fd05","fromNode":"e2d469b0f18f208e","fromSide":"bottom","toNode":"73175164615fca84","toSide":"top"},
+		{"id":"b83072880c776122","fromNode":"73175164615fca84","fromSide":"top","toNode":"e2d469b0f18f208e","toSide":"bottom","label":"Request user has budget for the SMS - gRPC"},
+		{"id":"dbaa3307068b944b","fromNode":"6f099ae35935b390","fromSide":"right","toNode":"69453bf7fb46a1fb","toSide":"left"},
+		{"id":"c4ab12776e4f7494","fromNode":"244798bf5aefe369","fromSide":"right","toNode":"69453bf7fb46a1fb","toSide":"left"},
+		{"id":"d1674890e0bf18bc","fromNode":"69453bf7fb46a1fb","fromSide":"bottom","toNode":"d40966a9ae5ed977","toSide":"right"}
+	]
+}

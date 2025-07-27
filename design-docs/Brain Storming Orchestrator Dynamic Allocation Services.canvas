@@ -1,0 +1,11 @@
+{
+	"nodes":[
+		{"id":"b2532e78037e2cbf","type":"text","text":"We can merge express and normal service to each other and design a global SMS sender service that support multiple queues with \nWe need two thing, first scheduler policy that allocate resources fairly.\nSLA -> Dynamic resource allocation. \n- the only thing this service needs, is exporting metrics and an observer to watch the result to allocate resources based on the result","x":60,"y":-520,"width":560,"height":340},
+		{"id":"458e4103908eede3","type":"text","text":"Accounting","x":70,"y":0,"width":250,"height":60},
+		{"id":"dcac83c006a49824","type":"text","text":"Reporting","x":370,"y":0,"width":250,"height":60},
+		{"id":"5870ef6168cb8cd0","type":"text","text":"Normal Service","x":70,"y":-80,"width":250,"height":60},
+		{"id":"571120999a1dd20d","type":"text","text":"API Gateway","x":245,"y":-160,"width":250,"height":60},
+		{"id":"8364ea9ab93e50cc","type":"text","text":"Express Service","x":370,"y":-80,"width":250,"height":60}
+	],
+	"edges":[]
+}
