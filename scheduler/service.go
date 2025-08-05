@@ -23,12 +23,6 @@ type Scheduler interface {
 	OnFailure(ctx context.Context, message entity.Message)
 }
 
-type Task interface {
-	OnSuccess(ctx context.Context)
-	OnFailure(ctx context.Context)
-	Run(ctx context.Context)
-}
-
 type Worker interface {
 	Submit(task func())
 	Stop()

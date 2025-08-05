@@ -74,6 +74,8 @@ func (r *RedisRepository) ReadStreams(ctx context.Context, streamsKey []string) 
 		streamsArgs = append(streamsArgs, "0-0")
 	}
 
+	// List pending
+	// XPending -> consumer
 	streams, err := r.rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
 		Group:    r.groupName,
 		Consumer: r.consumerName,

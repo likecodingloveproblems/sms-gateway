@@ -214,3 +214,35 @@ func (c *CachedPostgresStorage) cacheBalanceFromDBIfNecessary(ctx context.Contex
 }
 
 var _ Storage = &CachedPostgresStorage{}
+
+func ReserveDebit() {
+	// Atomic
+	// Decrease users balance
+	// instance status pending
+	// Failure Cache
+}
+
+func CommitDebit() {
+	// Status commit
+}
+
+func Rollback() {
+	// Increase
+}
+
+func Expiration() {
+	// Expire
+	// Increase
+}
+
+// ACID
+// RDBMS
+// Write -> 5000 write per second
+// Sync
+
+// Load balancer
+// cluster postgres
+
+// Scalable
+// 100,000
+// 1,000,000

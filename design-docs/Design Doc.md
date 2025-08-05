@@ -98,6 +98,18 @@
 - برای read میخواهیم پیام ها را به ترتیب دریافت از مشتری در جدولی نمایش دهیم و پیجینیشن هم داشته باشیم.
 - میخواهیم این سرویس به نسبت realtime باشد تا کاربر اگر خواست که وضعیت SMS هاش رو ببینه بتونه به خوبی دنبال کنه و گیج نشه فک کنم سیستم دریافت نکرده پیامکش رو
 
+
+fetch row base 
+
+status -> pending
+status -> success | failure
+Partial update
+partitioning
+
+Write heavy
+Order query -> 
+
+Mon
 #### گزینه های پیشنهادی
 1. Postgres:
 	1. Good for row base reads with filtering and ordering efficient support with partitioning and indexing
@@ -110,7 +122,9 @@
 3. Cassandra:
 	1. Does not support partial update efficiently
 4. MongoDB:
-	1. Very good for our usecase
+	1. Very good for our use case
+	2. Does not support partitioning
+
 
 #### راه حل
 با توجه به اینکه در سیستم accounting نیز از postgres استفاده شده میتوان در این سرویس نیز از postgres استفاده کرد تا استک کوچیک نگه داشته بشه.

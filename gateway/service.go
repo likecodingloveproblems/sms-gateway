@@ -61,6 +61,11 @@ func (s SyncAccountingCheckService) ProcessMessage(ctx context.Context, message 
 	return s.processMessage(message)
 }
 
+// Ownership process
+// Crash
+
+//
+
 func (s SyncAccountingCheckService) processMessage(message entity.Message) error {
 	// Add message to the scheduer stream
 	switch message.Type {
